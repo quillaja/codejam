@@ -17,10 +17,16 @@ func main() {
 	var n, k uint64
 	for i := 0; i < t; i++ {
 		fmt.Scanln(&n, &k)
-		h, l := solve(n, k)
+		h, l := solve2(n, k)
 		fmt.Printf("Case #%d: %d %d\n", i+1, h, l)
 		// fmt.Printf("Case #%d:(n=%d k=%d) %d %d\n", i+1, n, k, h, l)
 	}
+}
+
+// seemed maybe closer.. but still wrong.
+func solve2(n, k uint64) (h, l uint64) {
+	depth := level(k)
+	return n / pow2(depth+1), (n - 1) / pow2(depth+1)
 }
 
 // i don't know why this isn't working. it seems to work for all the
