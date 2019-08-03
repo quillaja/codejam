@@ -14,19 +14,43 @@ func main() {
 	var t int
 	fmt.Scanln(&t)
 	// t = 15
-	var n, k uint64
+	var n, k int
 	for i := 0; i < t; i++ {
 		fmt.Scanln(&n, &k)
-		h, l := solve2(n, k)
+		h, l := solve3(n, k)
 		fmt.Printf("Case #%d: %d %d\n", i+1, h, l)
 		// fmt.Printf("Case #%d:(n=%d k=%d) %d %d\n", i+1, n, k, h, l)
 	}
 }
 
 // seemed maybe closer.. but still wrong.
-func solve2(n, k uint64) (h, l uint64) {
-	depth := level(k)
-	return n / pow2(depth+1), (n - 1) / pow2(depth+1)
+func solve2(n, k int) (h, l int) {
+	h, l = n, n
+	// height := level(k)
+	kCurrent := 0
+	depth := 0
+	for kCurrent < k {
+		h = h/2 + h%2
+		l = l / 2
+		kLevel := pow2(depth)
+		if k-kCurrent < kLevel {
+			fmt.Println("k-kCurrent<kLevel = ", kCurrent, kLevel, k-kCurrent)
+			if kCurrent == int(pow2(depth+1)) {
+				fmt.Println("doing first in level")
+				h = h/2 + 1
+				l = l / 2
+			} else {
+				fmt.Println("doing rest in row")
+				h, l = h/2, l/2
+			}
+			kCurrent += kCurrent + kLevel
+		} else {
+			kCurrent -= kLevel
+		}
+		depth++
+		fmt.Println(h, l, kCurrent, depth)
+	}
+	return
 }
 
 // i don't know why this isn't working. it seems to work for all the
@@ -35,7 +59,7 @@ func solve2(n, k uint64) (h, l uint64) {
 // ... except it didnt: case 3 (n=6, k=2) was wrong. I'm getting (1,0), and the
 // answer is (1,1). On paper I'm getting this of course, but my little "formula"
 // isn't working for SOME cases when n is even (seems to work when n=1000...)
-func solve(n, k uint64) (h, l uint64) {
+func solve(n, k int) (h, l int) {
 	// level := int(math.Ceil(math.Log2(float64(k+1)) - 1))
 	// height := level(k)
 	// // fmt.Println(level)
@@ -50,9 +74,9 @@ func solve(n, k uint64) (h, l uint64) {
 	// // go left
 	// solve(min(h, l), k-above(height))
 
-	todepth := level(k)
-	curdepth := uint64(0)
-	visited := uint64(0)
+	todepth := height(k)
+	curdepth := 0
+	visited := 0
 	for curdepth <= todepth {
 		if n%2 == 0 && n > 0 {
 			h = n / 2
@@ -84,29 +108,69 @@ func solve(n, k uint64) (h, l uint64) {
 	return
 }
 
-// level of kth (1,2,...) stall taken
-func level(k uint64) uint64 {
-	return uint64(math.Floor(math.Log2(float64(k))))
+func solve3(n, k int) (h, l int) {
+	level := height(k)
+	if level <= 0 {
+		// base case
+		return high(n), low(n)
+	}
+
+	// some redudancy for clarity
+	lvlsq := pow2(level)
+	start := lvlsq
+	mid := lvlsq + lvlsq/2
+
+	// do "branch" here
+	var offset int
+	var f func(int, int) int
+	if k < mid {
+		offset = k - start
+		f = max
+	} else {
+		offset = k - mid
+		f = min
+	}
+
+	// recurse to previous "level", get it's high and low,
+	// and then choose the max or min (as f) as the n used to calculate
+	// k's high and low
+	kPrev := pow2(level-1) + offset
+	nPrev := f(solve3(n, kPrev))
+
+	return high(nPrev), low(nPrev)
 }
 
-func max(a, b uint64) uint64 {
+// height of kth (1,2,...) stall taken
+func height(k int) int {
+	return int(math.Floor(math.Log2(float64(k))))
+}
+
+func max(a, b int) int {
 	if a > b {
 		return a
 	}
 	return b
 }
 
-func min(a, b uint64) uint64 {
+func min(a, b int) int {
 	if a < b {
 		return a
 	}
 	return b
 }
 
-func pow2(x uint64) uint64 {
-	return 1 << x
+func pow2(x int) int {
+	return 1 << uint(x)
 }
 
-func above(h uint64) uint64 {
+func above(h int) int {
 	return pow2(h+1) - 1
+}
+
+func high(n int) int {
+	return n / 2
+}
+
+func low(n int) int {
+	return (n - 1) / 2
 }
